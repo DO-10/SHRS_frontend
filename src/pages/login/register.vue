@@ -1,145 +1,166 @@
-<!--<template>-->
-<!--  <div>-->
-<!--    <h2>用户登录</h2>-->
-<!--    <form @submit.prevent="handleLogin">-->
-<!--      <div>-->
-<!--        <label>邮箱</label>-->
-<!--        <input v-model="loginForm.username" type="text" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>密码</label>-->
-<!--        <input v-model="loginForm.password" type="password" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>选择身份</label>-->
-<!--        <select v-model="loginForm.role" required>-->
-<!--          <option value="">请选择类型</option>-->
-<!--          <option value="student">房客</option>-->
-<!--          <option value="teacher">房东</option>-->
-<!--          <option value="admin">管理员</option>-->
-<!--        </select>-->
-<!--      </div>-->
-<!--      <button @click="register">注册</button>-->
-<!--    </form>-->
-<!--    <button @click="register">注册</button>-->
-<!--  </div>-->
-<!--</template>-->
 <template>
-  <router-view></router-view>
   <div class="login-container">
     <div class="login-card">
-      <h2 class="login-title">欢迎登录</h2>
-      <form class="login-form" @submit.prevent="handleLogin">
+      <h2 class="login-title">用户注册</h2>
+      <form class="login-form" @submit.prevent="handleRegister">
         <!-- 错误提示 -->
-        <div v-if="loginError" class="error-message">
+        <div v-if="registerError" class="error-message">
           <i class="icon icon-error"></i>
-          {{ loginError }}
+          {{ registerError }}
         </div>
 
-        <!-- 表单内容 -->
+        <!-- 用户名 -->
         <div class="form-group">
-          <label class="input-label">邮箱</label>
+          <label class="input-label">用户名</label>
           <div class="input-wrapper">
             <i class="icon icon-user"></i>
             <input
-                v-model="loginForm.username"
+                v-model="registerForm.username"
+                type="text"
+                placeholder="4-20位字母数字组合"
+                class="form-input"
+                required
+                pattern="[A-Za-z0-9]{4,20}"
+            >
+          </div>
+        </div>
+
+        <!-- 邮箱 -->
+        <div class="form-group">
+          <label class="input-label">电子邮箱</label>
+          <div class="input-wrapper">
+            <i class="icon icon-email"></i>
+            <input
+                v-model="registerForm.email"
                 type="email"
-                placeholder="请输入邮箱"
+                placeholder="example@domain.com"
                 class="form-input"
                 required
             >
           </div>
         </div>
 
+        <!-- 密码 -->
         <div class="form-group">
           <label class="input-label">密码</label>
           <div class="input-wrapper">
             <i class="icon icon-lock"></i>
             <input
-                v-model="loginForm.password"
+                v-model="registerForm.password"
                 type="password"
-                placeholder="请输入密码"
+                placeholder="至少8位，含字母和数字"
                 class="form-input"
                 required
+                pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
             >
           </div>
         </div>
 
+        <!-- 手机号 -->
         <div class="form-group">
-          <label class="input-label">身份选择</label>
+          <label class="input-label">手机号</label>
           <div class="input-wrapper">
-            <i class="icon icon-role"></i>
-            <select
-                v-model="loginForm.role"
-                class="form-select"
+            <i class="icon icon-phone"></i>
+            <input
+                v-model="registerForm.phone"
+                type="tel"
+                placeholder="11位中国大陆手机号"
+                class="form-input"
                 required
+                pattern="^1[3-9]\d{9}$"
             >
-              <option value="">请选择身份</option>
-              <option value="tenant">房客</option>
-              <option value="landlord">房东</option>
-              <option value="admin">管理员</option>
-            </select>
           </div>
         </div>
 
+        <!-- 提交按钮 -->
         <button
             type="submit"
             class="login-btn"
             :disabled="loading"
         >
-          <span v-if="!loading">立即登录</span>
+          <span v-if="!loading">立即注册</span>
           <i v-else class="loading-icon"></i>
         </button>
 
         <div class="extra-actions">
-          <span @click="register" class="register-link">没有账号？立即注册</span>
+          <router-link to="/" class="login-link">已有账号？立即登录</router-link>
         </div>
       </form>
     </div>
   </div>
 </template>
+
 <script setup>
-import router from "@/pages/login/router.js";
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import request from '@/utils/request'
 
+const router = useRouter()
 
-import {reactive, ref} from "vue";
-import axios from 'axios'
-import request from "@/utils/request.js"
-const loginForm = reactive({
-  role: '房客',  // 新增的下拉框绑定值
+const registerForm = reactive({
   username: '',
-  password: ''
+  email: '',
+  password: '',
+  phone: '',
+  role: '房客'
 })
+
 const loading = ref(false)
-const loginError = ref('')
-const register = () => {
-  router.push("/register");
+const registerError = ref('')
+
+const validateForm = () => {
+  // 前端验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const phoneRegex = /^1[3-9]\d{9}$/
+
+  if (!emailRegex.test(registerForm.email)) {
+    registerError.value = '邮箱格式不正确'
+    return false
+  }
+
+  if (!phoneRegex.test(registerForm.phone)) {
+    registerError.value = '手机号格式不正确'
+    return false
+  }
+
+  return true
 }
-const handleLogin = async () => {
-  loginError.value = ''
+
+const handleRegister = async () => {
+  registerError.value = ''
+  if (!validateForm()) return
+
   loading.value = true
+
   try {
-    // await userStore.login(loginForm)
-    const response=await request.post('/login',loginForm,{
-      headers:{
+    const response = await request.post('/register', {
+      username: registerForm.username,
+      email: registerForm.email,
+      password: registerForm.password,
+      phone: registerForm.phone
+    })
 
-      }
-    });
-    const { token } = response.data
-
-    // 存储到 localStorage
-    localStorage.setItem('jwt_token', token)
-
-
-
-
+    await router.push({
+      path: '/',
+      query: {registered: 'success'}
+    })
   } catch (error) {
-    loginError.value = error.response?.data?.message || '登录失败'
+    const message = error.response?.data?.message || '注册失败'
+    registerError.value = handleErrorMessage(message)
+  } finally {
+    loading.value = false
   }
 }
 
+const handleErrorMessage = (message) => {
+  const errorMap = {
+    'email exists': '该邮箱已被注册',
+    'username exists': '用户名已被占用',
+    'phone exists': '手机号已被使用'
+  }
+  return errorMap[message] || message
+}
 </script>
-
 <style scoped>
 /* 基础重置 */
 * {
@@ -327,3 +348,5 @@ const handleLogin = async () => {
   font-size: 18px;
 }
 </style>
+
+<!-- 保持与登录页相同的样式 -->
