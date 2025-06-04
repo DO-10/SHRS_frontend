@@ -9,10 +9,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
     (config) => {
-        if (config.method?.toLowerCase() === 'post') {
-            config.data = qs.stringify(config.data)
-            config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        }
+        //由发送方决定转换形式
+        // if (config.method?.toLowerCase() === 'post') {
+        //     config.data = qs.stringify(config.data)
+        //     config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        // }
         // 自动带上token
         const token = localStorage.getItem('jwt_token')
         if (token) {
