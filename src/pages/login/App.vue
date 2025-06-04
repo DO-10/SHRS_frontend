@@ -106,7 +106,7 @@ import {reactive, ref} from "vue";
 import axios from 'axios'
 import request from "@/utils/request.js"
 const loginForm = reactive({
-  role: '房客',  // 新增的下拉框绑定值
+  role: 'tenant',  // 新增的下拉框绑定值
   username: '',
   password: ''
 })
@@ -119,22 +119,51 @@ const handleLogin = async () => {
   loginError.value = ''
   loading.value = true
   try {
-    // await userStore.login(loginForm)
-    const response=await request.post('/login',loginForm,{
-      headers:{
+    // 明确设置请求头为 JSON 格式
+    const response = await request.post('/auth/login',
+        loginForm,  // 直接传递对象
+        {
+          headers: {
+            'Content-Type': 'application/json' // 明确指定 JSON 格式
+          }
+        }
+    );
 
-      }
-    });
-    const { token } = response.data
+    // 从响应中提取 token（根据后端响应结构）
+    const token = response.access_token || response.token
 
     // 存储到 localStorage
-    localStorage.setItem('jwt_token', token)
+    if (token) {
+      localStorage.setItem('jwt_token', token)
+    } else {
+      console.warn("未在响应中找到 token")
+    }
 
-
-
+    // 登录成功后的操作（如跳转页面）
+    // router.push('/dashboard')
 
   } catch (error) {
-    loginError.value = error.response?.data?.message || '登录失败'
+    // 更详细的错误处理
+    console.error("完整登录错误:", error)
+
+    if (error.response) {
+      // 服务器返回了响应
+      console.error("状态码:", error.response.status)
+      console.error("响应数据:", error.response.data)
+
+      // 根据后端错误结构获取消息
+      loginError.value = error.response.data?.message ||
+          error.response.data?.error ||
+          `服务器错误 (${error.response.status})`
+    } else if (error.request) {
+      // 请求已发出但无响应
+      loginError.value = "服务器无响应，请检查网络"
+    } else {
+      // 其他错误
+      loginError.value = error.message || "请求配置错误"
+    }
+  } finally {
+    loading.value = false
   }
 }
 
