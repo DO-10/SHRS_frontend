@@ -108,7 +108,7 @@ export default {
         {
           title: "主卧室",
           id: "bedroom",
-          image: "https://pannellum.org/images/bma-1.jpg",
+          image: "src/Model/Picture/IMG20250604201624(1).jpg",
           hotspots: [
             { pitch: -2.6, yaw: 210.0, sceneId: "living-room", text: "前往客厅" },
             { pitch: -0.6, yaw: 70.0, sceneId: "bathroom", text: "前往浴室" }
