@@ -71,6 +71,22 @@
             >
           </div>
         </div>
+        <div class="form-group">
+          <label class="input-label">身份选择</label>
+          <div class="input-wrapper">
+            <i class="icon icon-role"></i>
+            <select
+                v-model="registerForm.role"
+                class="form-select"
+                required
+            >
+              <option value="">请选择身份</option>
+              <option value="tenant">房客</option>
+              <option value="landlord">房东</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+        </div>
 
         <!-- 提交按钮 -->
         <button
@@ -102,7 +118,7 @@ const registerForm = reactive({
   email: '',
   password: '',
   phone: '',
-  role: '房客'
+  role: 'tenant'
 })
 
 const loading = ref(false)
@@ -137,7 +153,8 @@ const handleRegister = async () => {
       username: registerForm.username,
       email: registerForm.email,
       password: registerForm.password,
-      phone: registerForm.phone
+      phone: registerForm.phone,
+      role: registerForm.role,
     })
 
     await router.push({
@@ -193,6 +210,10 @@ const handleErrorMessage = (message) => {
 .login-card:hover {
   transform: translateY(-5px);
 }
+.form-group {
+  margin-bottom: 24px;
+}
+
 
 /* 标题样式 */
 .login-title {
