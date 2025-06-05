@@ -14,7 +14,7 @@ const activeLink = ref('首页')
       </div>
       <div class="nav-links">
         <a
-            v-for="link in ['个人主页', '我的租房', 'PC客服']"
+            v-for="link in ['个人主页', '我的租房', 'PC社区','PC私聊','PC客服']"
             :key="link"
             href="#"
             :class="{ active: activeLink === link }"

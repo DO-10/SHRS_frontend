@@ -1,31 +1,4 @@
-<!--<template>-->
-<!--  <div>-->
-<!--    <h2>用户登录</h2>-->
-<!--    <form @submit.prevent="handleLogin">-->
-<!--      <div>-->
-<!--        <label>邮箱</label>-->
-<!--        <input v-model="loginForm.username" type="text" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>密码</label>-->
-<!--        <input v-model="loginForm.password" type="password" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>选择身份</label>-->
-<!--        <select v-model="loginForm.role" required>-->
-<!--          <option value="">请选择类型</option>-->
-<!--          <option value="student">房客</option>-->
-<!--          <option value="teacher">房东</option>-->
-<!--          <option value="admin">管理员</option>-->
-<!--        </select>-->
-<!--      </div>-->
-<!--      <button @click="register">注册</button>-->
-<!--    </form>-->
-<!--    <button @click="register">注册</button>-->
-<!--  </div>-->
-<!--</template>-->
 <template>
-  <router-view></router-view>
   <div class="login-container">
     <div class="login-card">
       <h2 class="login-title">欢迎登录</h2>
