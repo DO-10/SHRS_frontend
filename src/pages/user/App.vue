@@ -1,19 +1,28 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 import {
-  ElButton, ElDialog, ElForm, ElFormItem, ElInput,
-  ElRadioGroup, ElRadio, ElDatePicker, ElSelect,
-  ElOption, ElSlider, ElProgress, ElUpload,
-  ElMessage
+  ElButton,
+  ElDatePicker,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElLoading,
+  ElMessage,
+  ElOption,
+  ElProgress,
+  ElRadio,
+  ElRadioGroup,
+  ElSelect,
+  ElSlider,
+  ElUpload
 } from 'element-plus'
-import {
-  User, OfficeBuilding, Coin, Document,
-  Edit, View, Hide
-} from '@element-plus/icons-vue'
+import {Coin, Document, Edit, Hide, OfficeBuilding, User, View} from '@element-plus/icons-vue'
+import request from "@/utils/request.js";
 
 // 租户数据
 const tenant = reactive({
-  id: 'T202307015',
+  id: '1D2E',
   avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
   name: '张明',
   gender: 1,
@@ -101,26 +110,45 @@ const beforeAvatarUpload = (file) => {
 }
 
 // 处理头像上传
-const handleAvatarUpload = ({ file }) => {
-  uploadStatus.value = 'uploading'
-  uploadProgress.value = 0
-  uploadError.value = ''
+const handleAvatarUpload = async ({file}) => {
+  uploadStatus.value = 'uploading';
+  uploadProgress.value = 0;
+  uploadError.value = '';
+  previewImage.value = null;
 
-  // 模拟上传进度
-  const interval = setInterval(() => {
-    uploadProgress.value += 10
-    if (uploadProgress.value >= 100) {
-      clearInterval(interval)
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('id', tenant.id); // 使用动态ID
 
-      // 模拟上传完成
-      setTimeout(() => {
-        tenant.avatar = previewImage.value
-        uploadStatus.value = 'success'
-        ElMessage.success('头像上传成功！')
-      }, 800)
-    }
-  }, 200)
-}
+  try {
+    // 真实上传进度处理
+    const config = {
+      headers: {'Content-Type': 'multipart/form-data'},
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.lengthComputable) {
+          uploadProgress.value = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+          );
+        }
+      }
+    };
+
+    await request.post('/auth/avatar', formData, config);
+
+    // 上传成功后重新加载头像
+    await loadAvatar();
+    uploadStatus.value = 'success';
+    ElMessage.success('头像上传成功！');
+
+    // 清除预览图
+    previewImage.value = null;
+  } catch (error) {
+    console.error('上传失败:', error);
+    uploadStatus.value = 'error';
+    uploadError.value = error.message || '上传失败';
+    ElMessage.error('头像上传失败');
+  }
+};
 
 // 恢复默认头像
 const resetAvatar = () => {
@@ -171,6 +199,154 @@ const getFieldName = (field) => {
   }
   return fieldNames[field] || field
 }
+onMounted(() => {
+  loadAvatar();
+});
+//
+// const loadAvatar = async () => {
+//   // 释放旧的 Blob URL 避免内存泄漏
+//   // if (tenant.avatar && tenant.avatar.startsWith('blob:')) {
+//   //   URL.revokeObjectURL(tenant.avatar);
+//   // }
+//
+//   const loading = ElLoading.service({
+//     lock: true,
+//     text: '加载头像中...',
+//     background: 'rgba(0, 0, 0, 0.7)',
+//   });
+//
+//   try {
+//     // 添加随机参数防止缓存
+//     const timestamp = new Date().getTime();
+//     const random = Math.random().toString(36).substring(7);
+//     const response = await request.get(`/auth/avatar/${tenant.id}?t=${timestamp}&r=${random}`, {
+//       responseType: 'blob'
+//     });
+//
+//
+//     if (response.data ) {
+//       // 创建新的 Blob URL
+//       tenant.avatar = URL.createObjectURL(response.data);
+//     } else {
+//       console.log('请求返回Blob大小:', response.data.size);
+//       console.log('Blob URL:', tenant.avatar);
+//       console.log('响应类型:', response.headers['content-type']);
+//       tenant.avatar = defaultAvatar;
+//     }
+//   } catch (error) {
+//     console.error('加载头像失败:', error);
+//     tenant.avatar = defaultAvatar;
+//     ElMessage.error('头像加载失败，使用默认头像');
+//   } finally {
+//     loading.close();
+//   }
+// };
+// 增强的内容类型检测函数
+const detectContentType = (arrayBuffer) => {
+  const header = new Uint8Array(arrayBuffer.slice(0, 12));
+
+  // 常见图片格式检测
+  if (header[0] === 0xFF && header[1] === 0xD8) return 'image/jpeg';
+  if (header[0] === 0x89 && String.fromCharCode(...header.subarray(1, 4)) === 'PNG') return 'image/png';
+  if (String.fromCharCode(...header.subarray(0, 6)) === 'GIF87a' ||
+      String.fromCharCode(...header.subarray(0, 6)) === 'GIF89a') return 'image/gif';
+  if (String.fromCharCode(...header.subarray(0, 4)) === 'RIFF' &&
+      String.fromCharCode(...header.subarray(8, 12)) === 'WEBP') return 'image/webp';
+
+  return 'application/octet-stream';
+};
+
+const loadAvatar = async () => {
+  const loading = ElLoading.service({
+    lock: true,
+    text: '加载头像中...',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+
+  try {
+    if (previewImage.value) return;
+
+    const timestamp = Date.now();
+    const response = await request.get(`/auth/getavatar/${tenant.id}?t=${timestamp}`, {
+      responseType: 'arraybuffer',
+      timeout: 10000
+    });
+
+    // 核心修复：确保正确处理响应格式
+    let imageData;
+    if (typeof response === 'object' && 'data' in response) {
+      // Axios 标准响应格式
+      imageData = response.data;
+    } else {
+      // 原始二进制数据
+      imageData = response;
+    }
+
+    if (!imageData || !(imageData instanceof ArrayBuffer)) {
+      throw new Error('收到无效的响应数据');
+    }
+
+    // 增强的图片检测和处理
+    handleAvatarData(imageData);
+
+  } catch (error) {
+    console.error('加载头像失败:', error);
+    tenant.avatar = defaultAvatar;
+    ElMessage.error(error.message || '头像加载失败');
+  } finally {
+    loading.close();
+  }
+};
+
+const handleAvatarData = (arrayBuffer) => {
+  // 1. 使用自检测方法确定图片类型
+  const detectedType = detectContentType(arrayBuffer);
+
+  // 2. 始终优先将其视为图片处理
+  if (detectedType.startsWith('image/')) {
+    const blob = new Blob([arrayBuffer], { type: detectedType });
+    displayImageBlob(blob);
+    return;
+  }
+
+  // 3. 如果不是图片，尝试解析可能的错误信息
+  try {
+    const decoder = new TextDecoder('utf-8');
+    const textResponse = decoder.decode(
+        new Uint8Array(arrayBuffer, 0, Math.min(arrayBuffer.byteLength, 1024))
+    );
+
+    // 尝试检测和解析JSON错误
+    if (textResponse.includes('{') && textResponse.includes('}')) {
+      const errorJson = JSON.parse(textResponse);
+      throw new Error(errorJson.message || '服务器返回错误');
+    } else if (textResponse.includes('<html>') || textResponse.includes('<body>')) {
+      throw new Error('收到HTML响应，可能是服务器错误');
+    } else if (textResponse.length > 0) {
+      throw new Error(`服务器返回信息: ${textResponse.substring(0, 100)}`);
+    } else {
+      throw new Error('收到空响应');
+    }
+  } catch (parseError) {
+    console.warn('解析错误信息失败:', parseError);
+    throw new Error('无法显示头像，请检查服务器配置');
+  }
+};
+
+const displayImageBlob = (blob) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    tenant.avatar = reader.result;
+  };
+  reader.onerror = (e) => {
+    console.error('创建头像URL失败:', e);
+    tenant.avatar = defaultAvatar;
+    ElMessage.error('头像格式不支持');
+  };
+  reader.readAsDataURL(blob);
+};
+const defaultAvatar = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+
 
 // 保存编辑结果
 const saveEdit = () => {
@@ -203,9 +379,8 @@ const resetForm = () => {
   <div class="container">
     <header>
       <h1>
-        <el-icon class="header-icon"><User /></el-icon> 租户信息管理系统
+        <el-icon class="header-icon"><User /></el-icon> 租户信息
       </h1>
-      <p>全面管理租户个人信息，支持安全上传头像和敏感信息加密存储</p>
     </header>
 
     <div class="tenant-card">
