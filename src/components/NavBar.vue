@@ -1,10 +1,3 @@
-<script setup>
-import { ref } from 'vue'
-import { ElButton } from 'element-plus'
-
-const activeLink = ref('首页')
-</script>
-
 <template>
   <div class="navbar-container">
     <div class="navbar">
@@ -14,22 +7,54 @@ const activeLink = ref('首页')
       </div>
       <div class="nav-links">
         <a
-            v-for="link in ['个人主页', '我的租房', 'PC社区','PC私聊','PC客服']"
-            :key="link"
-            href="#"
-            :class="{ active: activeLink === link }"
-            @click.prevent="activeLink = link"
+            v-for="link in links"
+            :key="link.name"
+            :href="link.url"
+            :class="{ active: activeLink === link.name }"
         >
-          {{ link }}
+          {{ link.name }}
         </a>
       </div>
       <div class="user-actions">
-        <ElButton type="info" plain size="small">登录</ElButton>
-        <ElButton type="primary" size="small">成为房东</ElButton>
+        <ElButton
+            type="info"
+            plain
+            size="small"
+            @click="goToLogin"
+        >登录</ElButton>
+        <ElButton
+            type="primary"
+            size="small"
+            @click="goToBecomeHost"
+        >成为房东</ElButton>
       </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { ElButton } from 'element-plus'
+
+const activeLink = ref('首页')
+const goToLogin = () => {
+  window.location.href = 'login.html'; // 替换为你的登录页面路径
+}
+
+const goToBecomeHost = () => {
+  window.location.href = 'become_host.html'; // 替换为你的页面路径
+}
+
+const links = [
+  { name: '个人主页', url: 'user.html' },
+  { name: '我的租房', url: 'rentals.html' },
+  { name: 'PC社区', url: 'community.html' },
+  { name: 'PC私聊', url: 'chat.html' },
+  { name: 'PC客服', url: 'customer_service.html' }
+]
+</script>
+
+
 
 <style scoped>
 .navbar-container {
