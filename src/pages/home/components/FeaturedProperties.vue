@@ -6,9 +6,9 @@ const properties = ref([
   {
     id: 1,
     title: "梅溪湖 3室2厅 110㎡",
-    price: "128万",
+    price: "2500元/月",
     image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    district: "岳麓区",
+    district: "长沙市开福区",
     size: "110㎡",
     type: "3室2厅",
     tags: ["地铁房", "学区房"]
@@ -16,9 +16,9 @@ const properties = ref([
   {
     id: 2,
     title: "北辰三角洲 湖景豪宅 150㎡",
-    price: "298万",
+    price: "4500元/月",
     image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    district: "开福区",
+    district: "长沙市开福区",
     size: "150㎡",
     type: "4室2厅",
     tags: ["江景房", "豪华装修"]
@@ -26,9 +26,9 @@ const properties = ref([
   {
     id: 3,
     title: "南门口 精装小复式 85㎡",
-    price: "158万",
+    price: "3000元/月",
     image: "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    district: "天心区",
+    district: "长沙市天心区",
     size: "85㎡",
     type: "2室1厅",
     tags: ["复式", "精装修"]

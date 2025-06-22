@@ -60,7 +60,7 @@
             class="login-btn"
             :disabled="loading"
         >
-          <span v-if="!loading">立即登录</span>
+          <span v-if="!loading"><立即></立即>登录</span>
           <i v-else class="loading-icon"></i>
         </button>
 
@@ -88,9 +88,12 @@ const loginError = ref('')
 const register = () => {
   router.push("/register");
 }
+console.log("cnd")
 const handleLogin = async () => {
   loginError.value = ''
   loading.value = true
+
+
   try {
     // 明确设置请求头为 JSON 格式
     const response = await request.post('/auth/login',
@@ -104,16 +107,23 @@ const handleLogin = async () => {
 
     // 从响应中提取 token（根据后端响应结构）
     const token = response.access_token || response.token
+    console.log(token)
+
+
+
 
     // 存储到 localStorage
     if (token) {
       localStorage.setItem('jwt_token', token)
+
     } else {
       console.warn("未在响应中找到 token")
+
     }
 
     // 登录成功后的操作（如跳转页面）
-    // router.push('/dashboard')
+    await router.push('/home.html');
+
 
   } catch (error) {
     // 更详细的错误处理
