@@ -72,6 +72,49 @@
           </div>
         </div>
 
+        <!-- 验证码 -->
+        <div class="form-group">
+          <label class="input-label">验证码</label>
+          <div class="input-wrapper captcha-wrapper">
+            <i class="icon icon-code"></i>
+            <input
+                v-model="registerForm.captcha"
+                type="text"
+                placeholder="输入验证码"
+                class="form-input"
+                required
+                maxlength="6"
+            >
+            <button
+                type="button"
+                class="send-code-btn"
+                :disabled="sendingCode || countdown > 0"
+                @click="sendCaptcha"
+            >
+              <span v-if="countdown === 0">发送验证码</span>
+              <span v-else>{{ countdown }}秒后重发</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 身份选择 -->
+        <div class="form-group">
+          <label class="input-label">身份选择</label>
+          <div class="input-wrapper">
+            <i class="icon icon-role"></i>
+            <select
+                v-model="registerForm.role"
+                class="form-select"
+                required
+            >
+              <option value="">请选择身份</option>
+              <option value="tenant">房客</option>
+              <option value="landlord">房东</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+        </div>
+
         <!-- 提交按钮 -->
         <button
             type="submit"
@@ -97,19 +140,53 @@ import request from '@/utils/request'
 
 const router = useRouter()
 
+// 注册表单数据
 const registerForm = reactive({
   username: '',
   email: '',
   password: '',
   phone: '',
-  role: '房客'
+  role: 'tenant',
+  captcha: ''
 })
 
 const loading = ref(false)
 const registerError = ref('')
 
+// 验证码相关
+const sendingCode = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
+
+// 发送验证码
+const sendCaptcha = () => {
+  if (!registerForm.phone) {
+    registerError.value = '请填写手机号后再获取验证码'
+    return
+  }
+  // 模拟请求
+  sendingCode.value = true
+  setTimeout(() => {
+    sendingCode.value = false
+    startCountdown()
+    alert('验证码已发送，请注意查收')
+  }, 1000)
+}
+
+// 倒计时
+const startCountdown = () => {
+  countdown.value = 60
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value -= 1
+    } else {
+      clearInterval(countdownTimer)
+    }
+  }, 1000)
+}
+
+// 表单验证
 const validateForm = () => {
-  // 前端验证
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const phoneRegex = /^1[3-9]\d{9}$/
 
@@ -126,6 +203,7 @@ const validateForm = () => {
   return true
 }
 
+// 注册提交
 const handleRegister = async () => {
   registerError.value = ''
   if (!validateForm()) return
@@ -133,16 +211,18 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    const response = await request.post('/register', {
+    const response = await request.post('/auth/register', {
       username: registerForm.username,
       email: registerForm.email,
       password: registerForm.password,
-      phone: registerForm.phone
+      phone: registerForm.phone,
+      role: registerForm.role,
+      captcha: registerForm.captcha
     })
 
     await router.push({
       path: '/',
-      query: {registered: 'success'}
+      query: { registered: 'success' }
     })
   } catch (error) {
     const message = error.response?.data?.message || '注册失败'
@@ -161,6 +241,7 @@ const handleErrorMessage = (message) => {
   return errorMap[message] || message
 }
 </script>
+
 <style scoped>
 /* 基础重置 */
 * {
@@ -193,30 +274,6 @@ const handleErrorMessage = (message) => {
 .login-card:hover {
   transform: translateY(-5px);
 }
-
-/* 标题样式 */
-.login-title {
-  text-align: center;
-  color: #2c3e50;
-  font-size: 28px;
-  margin-bottom: 40px;
-  font-weight: 600;
-  position: relative;
-}
-
-.login-title::after {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: #3498db;
-  border-radius: 2px;
-}
-
-/* 表单组样式 */
 .form-group {
   margin-bottom: 24px;
 }
@@ -246,8 +303,10 @@ const handleErrorMessage = (message) => {
 .icon-role::before { content: '\e905'; }
 .icon-user::before { content: '\e971'; }
 .icon-lock::before { content: '\e98d'; }
+.icon-email::before { content: '\e92b'; }
+.icon-phone::before { content: '\e900'; }
+.icon-code::before { content: '\e905'; } /* 自定义图标，需字体支持 */
 
-/* 输入框样式 */
 .form-input,
 .form-select {
   width: 100%;
@@ -347,6 +406,30 @@ const handleErrorMessage = (message) => {
   content: '⚠️';
   font-size: 18px;
 }
-</style>
 
-<!-- 保持与登录页相同的样式 -->
+/* 验证码按钮样式 */
+.captcha-wrapper {
+  position: relative;
+}
+
+.send-code-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 36px;
+  padding: 0 12px;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-code-btn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+</style>
