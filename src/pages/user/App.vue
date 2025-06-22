@@ -24,20 +24,20 @@ import request from "@/utils/request.js";
 const tenant = reactive({
   id: '1D2E',
   avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-  name: '张明',
+  name: '刘润程',
   gender: 1,
-  birth: '1985-07-23',
-  email: 'zhangming@example.com',
-  phone: '13800138000',
+  birth: '2004-09-10',
+  email: '3222329639@qq.com',
+  phone: '18825908298',
   idNumber: '110105198507230012',
   address: {
-    province: '北京市',
-    city: '北京市',
-    district: '朝阳区'
+    province: '湖南省',
+    city: '长沙市',
+    district: '中南大学校本部'
   },
-  occupation: '软件工程师',
-  workUnit: '科技有限公司',
-  income: 25000
+  occupation: '学生',
+  workUnit: '中南大学',
+  income: 1500
 })
 
 // 头像上传状态

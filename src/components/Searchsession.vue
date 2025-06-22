@@ -164,6 +164,9 @@ const regions = [
     ]
   }
 ]
+function goToHouseDetail() {
+  window.location.href = 'search.html'
+}
 </script>
 
 <template>
@@ -237,6 +240,8 @@ const regions = [
             >
               {{ city }}
             </div>
+
+
           </div>
 
           <!-- 显示当前选择 -->
@@ -246,6 +251,7 @@ const regions = [
             <span v-else-if="currentRegion">已选地区：{{ currentRegion.name }} - {{selectedPriceRange}}</span>
 
           </div>
+
         </div>
         <!-- 价格选择部分 -->
         <div class="filter-group">
@@ -261,6 +267,7 @@ const regions = [
             >
               {{price}}
             </div>
+            <button class="search-btn" @click="goToHouseDetail">搜索房源</button>
           </div>
         </div>
       </div>

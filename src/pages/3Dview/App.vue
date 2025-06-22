@@ -1,10 +1,7 @@
 <template>
   <div class="virtual-tour-container">
     <div class="container">
-      <header>
-        <h1>全景3D看房体验</h1>
-        <p>使用最新Web技术打造的沉浸式房屋体验，360°自由查看每个房间的细节</p>
-      </header>
+
 
       <div class="panorama-container">
         <div ref="panoramaElement" id="panorama"></div>
@@ -64,11 +61,7 @@
 
       <footer>
         <div class="footer-content">
-          <div class="logo">
-            <i class="fas fa-home"></i>
-            <span>智慧看房</span>
-          </div>
-          <p>© 2023 Vue 3D看房应用 - 使用Pannellum技术实现</p>
+
           <div class="social-links">
             <i class="fab fa-weixin"></i>
             <i class="fab fa-qq"></i>
@@ -93,7 +86,7 @@ export default {
         {
           title: "客厅",
           id: "living-room",
-          image: "src/Model/Picture/54387302729_54a96401f0_k.jpg",
+          image: "src/Model/Picture/IMG20250604201624(1).jpg",
           hotspots: [
             { pitch: -10.2, yaw: 100.0, sceneId: "dining-room", text: "前往餐厅" },
             { pitch: 5.0, yaw: 210.0, sceneId: "balcony", text: "前往阳台" }
@@ -108,7 +101,7 @@ export default {
         {
           title: "主卧室",
           id: "bedroom",
-          image: "src/Model/Picture/IMG20250604201624(1).jpg",
+          image: "src/Model/Picture/54387302729_54a96401f0_k.jpg",
           hotspots: [
             { pitch: -2.6, yaw: 210.0, sceneId: "living-room", text: "前往客厅" },
             { pitch: -0.6, yaw: 70.0, sceneId: "bathroom", text: "前往浴室" }

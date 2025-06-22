@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>租房管理系统 - 管理员面板</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="app">
+    <admin-dashboard></admin-dashboard>
+</div>
+
+<script>
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+
+    // 管理员面板组件
+    const AdminDashboard = {
+        template: `
+        <div class="admin-container">
+          <!-- 侧边导航 -->
+          <div class="sidebar">
+            <div class="sidebar-header">
+              <i class="fas fa-home"></i>
+              <h2>租房管理系统</h2>
+            </div>
+            <div class="sidebar-menu">
+              <div class="menu-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>数据概览</span>
+              </div>
+              <div class="menu-item">
+                <i class="fas fa-building"></i>
+                <span>房源管理</span>
+              </div>
+              <div class="menu-item">
+                <i class="fas fa-file-contract"></i>
+                <span>租赁管理</span>
+              </div>
+              <div class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+              </div>
+              <div class="menu-item">
+                <i class="fas fa-wallet"></i>
+                <span>财务管理</span>
+              </div>
+              <div class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span>系统设置</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 主内容区 -->
+          <div class="main-content">
+            <div class="admin-header">
+              <div class="header-left">
+                <h1>管理员控制面板</h1>
+              </div>
+              <div class="header-right">
+                <el-button type="primary" icon="el-icon-search" @click="openUserSearch">
+                  用户搜索
+                </el-button>
+                <el-dropdown trigger="click" style="margin-left: 20px;">
+                  <div style="display: flex; align-items: center; cursor: pointer;">
+                    <div class="user-avatar">A</div>
+                    <span style="margin: 0 10px;">管理员</span>
+                    <i class="el-icon-caret-bottom"></i>
+                  </div>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item icon="el-icon-user">个人中心</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-setting">系统设置</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-switch-button">退出登录</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
+
+            <div class="content-wrapper">
+              <!-- 统计卡片 -->
+              <div class="stats-container">
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(64, 158, 255, 0.1); color: var(--primary-color);">
+                    <i class="fas fa-home"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value">29</div>
+                    <div class="stat-title">总房源数量</div>
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(103, 194, 58, 0.1); color: var(--success-color);">
+                    <i class="fas fa-file-contract"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value">1</div>
+                    <div class="stat-title">本月租赁订单</div>
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(230, 162, 60, 0.1); color: var(--warning-color);">
+                    <i class="fas fa-users"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value">3</div>
+                    <div class="stat-title">注册用户数</div>
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(245, 108, 108, 0.1); color: var(--danger-color);">
+                    <i class="fas fa-money-bill-wave"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value">¥7500</div>
+                    <div class="stat-title">本月总收入</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 图表区域 -->
+              <div class="dashboard-grid">
+                <!-- 户型销量饼图 -->
+                <div class="admin-card">
+                  <div class="card-header">
+                    <h3>各户型月销量分布</h3>
+                    <i class="fas fa-chart-pie icon"></i>
+                  </div>
+                  <div class="chart-container" id="houseTypeChart"></div>
+                </div>
+
+                <!-- 城市销量折线图 -->
+                <div class="admin-card">
+                  <div class="card-header">
+                    <h3>城市销量半月趋势</h3>
+                    <i class="fas fa-chart-line icon"></i>
+                  </div>
+                  <div class="chart-container" id="citySalesChart"></div>
+                </div>
+
+                <!-- 用户管理表格 -->
+                <div class="admin-card grid-full">
+                  <div class="card-header">
+                    <h3>用户管理</h3>
+                    <i class="fas fa-users icon"></i>
+                  </div>
+                  <div class="user-search-area">
+                    <el-input placeholder="输入用户名、手机号或邮箱" v-model="searchQuery" clearable style="width: 300px;">
+                      <template #prefix>
+                        <i class="el-icon-search"></i>
+                      </template>
+                    </el-input>
+                    <el-button type="primary" icon="el-icon-search" @click="searchUsers">搜索</el-button>
+                    <el-button icon="el-icon-refresh" @click="resetSearch">重置</el-button>
+                  </div>
+                  <el-table :data="filteredUsers" class="user-table" style="width: 100%">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column label="用户">
+                      <template #default="scope">
+                        <div style="display: flex; align-items: center;">
+                          <div class="user-avatar">{{ scope.row.name.charAt(0) }}</div>
+                          <div style="margin-left: 10px;">
+                            <div>{{ scope.row.name }}</div>
+                            <div style="font-size: 12px; color: #888;">{{ scope.row.phone }}</div>
+                          </div>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="email" label="邮箱"></el-table-column>
+                    <el-table-column prop="registerDate" label="注册日期" width="120"></el-table-column>
+                    <el-table-column label="状态" width="100">
+                      <template #default="scope">
+                        <span :class="scope.row.status === 'active' ? 'status-active' : 'status-inactive'">
+                          {{ scope.row.status === 'active' ? '活跃' : '禁用' }}
+                        </span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="权限">
+                      <template #default="scope">
+                        <div style="display: flex; flex-wrap: wrap;">
+                          <el-tag v-for="perm in scope.row.permissions" :key="perm" type="info" size="small" class="permission-tag">
+                            {{ perm }}
+                          </el-tag>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="150">
+                      <template #default="scope">
+                        <el-button size="small" @click="openPermissionDialog(scope.row)">权限</el-button>
+                        <el-button size="small" :type="scope.row.status === 'active' ? 'danger' : 'success'" @click="toggleUserStatus(scope.row)">
+                          {{ scope.row.status === 'active' ? '禁用' : '启用' }}
+                        </el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 权限管理弹窗 -->
+        <el-dialog title="用户权限管理" v-model="permissionDialogVisible" class="permission-dialog" width="500px">
+          <div class="permission-form">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+              <div class="user-avatar" style="width: 50px; height: 50px; font-size: 20px;">{{ selectedUser.name.charAt(0) }}</div>
+              <div style="margin-left: 15px;">
+                <div style="font-size: 18px; font-weight: 600;">{{ selectedUser.name }}</div>
+                <div style="color: #888; margin-top: 5px;">ID: {{ selectedUser.id }}</div>
+              </div>
+            </div>
+
+            <h4 style="margin-bottom: 15px;">系统权限</h4>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="房源管理">房源管理</el-checkbox>
+            </div>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="租赁管理">租赁管理</el-checkbox>
+            </div>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="用户管理">用户管理</el-checkbox>
+            </div>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="财务管理">财务管理</el-checkbox>
+            </div>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="数据报表">数据报表</el-checkbox>
+            </div>
+            <div class="permission-checkbox">
+              <el-checkbox v-model="selectedUserPermissions" label="系统设置">系统设置</el-checkbox>
+            </div>
+
+            <div class="permission-actions">
+              <el-button @click="permissionDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="savePermissions">保存权限</el-button>
+            </div>
+          </div>
+        </el-dialog>
+      `,
+        setup() {
+            // 图表实例
+            let houseTypeChart = null;
+            let citySalesChart = null;
+
+            // 搜索查询
+            const searchQuery = ref('');
+
+            // 用户数据
+            const users = ref([
+                { id: '1D2E', name: '刘润程', phone: '18825908298', email: '3222329639@qq.com', registerDate: '2025-6-21', status: 'active', permissions: ['房源查看', '租赁管理'] },
+                { id: 'lrckkk', name: '保华', phone: '13900139000', email: '11@qq.com', registerDate: '2023-02-20', status: 'active', permissions: ['房源管理', '租赁管理'] },
+                { id: 3, name: '王强', phone: '13700137000', email: '34@qq.com', registerDate: '2023-03-10', status: 'inactive', permissions: ['房源查看'] },
+
+            ]);
+
+            // 过滤用户
+            const filteredUsers = computed(() => {
+                if (!searchQuery.value) return users.value;
+                const query = searchQuery.value.toLowerCase();
+                return users.value.filter(user =>
+                    user.name.toLowerCase().includes(query) ||
+                    user.phone.includes(query) ||
+                    user.email.toLowerCase().includes(query)
+                );
+            });
+
+            // 权限管理弹窗
+            const permissionDialogVisible = ref(false);
+            const selectedUser = reactive({
+                id: '',
+                name: '',
+                permissions: []
+            });
+            const selectedUserPermissions = ref([]);
+
+            // 打开权限管理弹窗
+            const openPermissionDialog = (user) => {
+                selectedUser.id = user.id;
+                selectedUser.name = user.name;
+                selectedUser.permissions = [...user.permissions];
+                selectedUserPermissions.value = [...user.permissions];
+                permissionDialogVisible.value = true;
+            };
+
+            // 保存权限
+            const savePermissions = () => {
+                const user = users.value.find(u => u.id === selectedUser.id);
+                if (user) {
+                    user.permissions = [...selectedUserPermissions.value];
+                    ElMessage.success('权限已更新');
+                    permissionDialogVisible.value = false;
+                }
+            };
+
+            // 切换用户状态
+            const toggleUserStatus = (user) => {
+                user.status = user.status === 'active' ? 'inactive' : 'active';
+                ElMessage.success(`用户状态已${user.status === 'active' ? '启用' : '禁用'}`);
+            };
+
+            // 打开用户搜索弹窗
+            const openUserSearch = () => {
+                searchQuery.value = '';
+                ElMessage.info('请输入搜索条件');
+            };
+
+            // 搜索用户
+            const searchUsers = () => {
+                if (!searchQuery.value) {
+                    ElMessage.info('请输入搜索内容');
+                    return;
+                }
+                ElMessage.success(`找到 ${filteredUsers.value.length} 条匹配结果`);
+            };
+
+            // 重置搜索
+            const resetSearch = () => {
+                searchQuery.value = '';
+                ElMessage.success('搜索条件已重置');
+            };
+
+            // 初始化图表
+            const initCharts = () => {
+                // 户型销量饼图
+                const houseTypeChartDom = document.getElementById('houseTypeChart');
+                houseTypeChart = echarts.init(houseTypeChartDom);
+
+                const houseTypeOption = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'horizontal',
+                        bottom: 10,
+                        data: ['一居室', '两居室', '三居室', '四居室', '复式', '别墅']
+                    },
+                    series: [
+                        {
+                            name: '户型销量',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            avoidLabelOverlap: false,
+                            itemStyle: {
+                                borderRadius: 10,
+                                borderColor: '#fff',
+                                borderWidth: 2
+                            },
+                            label: {
+                                show: false,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: '18',
+                                    fontWeight: 'bold'
+                                }
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            data: [
+                                { value: 3, name: '一居室' },
+                                { value: 3, name: '两居室' },
+                                { value: 6, name: '三居室' },
+                                { value: 7, name: '四居室' },
+                                { value: 9, name: '复式' },
+                                { value: 1, name: '别墅' }
+                            ]
+                        }
+                    ]
+                };
+
+                houseTypeChart.setOption(houseTypeOption);
+
+                // 城市销量折线图
+                const citySalesChartDom = document.getElementById('citySalesChart');
+                citySalesChart = echarts.init(citySalesChartDom);
+
+                const citySalesOption = {
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: ['北京', '上海', '广州', '深圳', '杭州']
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: ['1日', '3日', '5日', '7日', '9日', '11日', '13日', '15日']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '销量(套)'
+                    },
+                    series: [
+                        {
+                            name: '长沙',
+                            type: 'line',
+                            smooth: true,
+                            data: [0, 0, 1, 1, 0, 1, 1, 1]
+                        },
+                        {
+                            name: '上海',
+                            type: 'line',
+                            smooth: true,
+                            data: [0, 2, 1, 0, 0, 0, 10, 0]
+                        },
+                        {
+                            name: '广州',
+                            type: 'line',
+                            smooth: true,
+                            data: [0, 2, 1, 4, 0, 0, 10, 5]
+                        },
+                        {
+                            name: '深圳',
+                            type: 'line',
+                            smooth: true,
+                            data: [0, 0, 1, 4, 0, 0, 0, 0]
+                        },
+                        {
+                            name: '杭州',
+                            type: 'line',
+                            smooth: true,
+                            data: [2, 3, 0, 3, 9, 3, 0, 0]
+                        }
+                    ]
+                };
+
+                citySalesChart.setOption(citySalesOption);
+
+                // 响应式调整图表大小
+                window.addEventListener('resize', () => {
+                    houseTypeChart.resize();
+                    citySalesChart.resize();
+                });
+            };
+
+            onMounted(() => {
+                initCharts();
+            });
+
+            return {
+                searchQuery,
+                users,
+                filteredUsers,
+                permissionDialogVisible,
+                selectedUser,
+                selectedUserPermissions,
+                openPermissionDialog,
+                savePermissions,
+                toggleUserStatus,
+                openUserSearch,
+                searchUsers,
+                resetSearch
+            };
+        }
+    };
+
+    // 创建Vue应用
+    const app = createApp({
+        components: {
+            AdminDashboard
+        },
+        template: `<admin-dashboard />`
+    });
+
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    }
+
+    :root {
+        --primary-color: #409EFF;
+        --primary-light: #ecf5ff;
+        --success-color: #67C23A;
+        --warning-color: #E6A23C;
+        --danger-color: #F56C6C;
+        --dark-color: #304156;
+        --sidebar-bg: #304156;
+        --sidebar-hover: #263445;
+        --header-height: 60px;
+        --sidebar-width: 220px;
+        --card-radius: 12px;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        background-color: #f0f2f5;
+        color: #333;
+        overflow-x: hidden;
+    }
+
+    .admin-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* 侧边栏样式 */
+    .sidebar {
+        width: var(--sidebar-width);
+        background: var(--sidebar-bg);
+        color: #fff;
+        transition: all 0.3s;
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+    }
+
+    .sidebar-header {
+        height: var(--header-height);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    .sidebar-menu {
+        padding: 10px 0;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .menu-item i {
+        margin-right: 12px;
+        font-size: 18px;
+    }
+
+    .menu-item:hover, .menu-item.active {
+        background: var(--sidebar-hover);
+        color: var(--primary-color);
+    }
+
+    /* 主内容区样式 */
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .admin-header {
+        height: var(--header-height);
+        background: #fff;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 30px;
+        z-index: 99;
+    }
+
+    .header-left h1 {
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+    }
+
+    .admin-card {
+        background: #fff;
+        border-radius: var(--card-radius);
+        box-shadow: var(--shadow);
+        padding: 24px;
+        margin-bottom: 24px;
+        transition: all 0.3s;
+    }
+
+    .admin-card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .card-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+
+    .card-header .icon {
+        font-size: 24px;
+        color: var(--primary-color);
+    }
+
+    .chart-container {
+        height: 350px;
+        width: 100%;
+    }
+
+    /* 内容布局 */
+    .content-wrapper {
+        padding: 24px;
+        flex: 1;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+
+    .grid-full {
+        grid-column: 1 / 3;
+    }
+
+    /* 用户搜索区域 */
+    .user-search-area {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .user-table {
+        width: 100%;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+
+    .status-active {
+        color: var(--success-color);
+        background: rgba(103, 194, 58, 0.1);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .status-inactive {
+        color: var(--danger-color);
+        background: rgba(245, 108, 108, 0.1);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .permission-tag {
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+
+    /* 弹窗样式 */
+    .permission-dialog .el-dialog {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .permission-dialog .el-dialog__header {
+        background: linear-gradient(120deg, #409EFF, #79BBFF);
+        margin: 0;
+        padding: 16px 20px;
+    }
+
+    .permission-dialog .el-dialog__title {
+        color: white;
+        font-weight: 600;
+    }
+
+    .permission-dialog .el-dialog__headerbtn .el-dialog__close {
+        color: white;
+    }
+
+    .permission-form {
+        padding: 20px;
+    }
+
+    .permission-checkbox {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .permission-checkbox label {
+        margin-left: 10px;
+        font-size: 15px;
+    }
+
+    .permission-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+
+    /* 统计卡片 */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: var(--card-radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-right: 18px;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-title {
+        font-size: 14px;
+        color: #888;
+    }
+
+    /* 响应式布局 */
+    @media (max-width: 992px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-full {
+            grid-column: 1;
+        }
+
+        .stats-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+            width: 70px;
+        }
+
+        .sidebar-header h2, .menu-item span {
+            display: none;
+        }
+
+        .menu-item {
+            justify-content: center;
+        }
+
+        .menu-item i {
+            margin-right: 0;
+        }
+    }
+
+    /* 自定义滚动条 */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+</body>
+</html>

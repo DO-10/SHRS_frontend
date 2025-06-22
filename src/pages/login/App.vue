@@ -1,42 +1,16 @@
-<!--<template>-->
-<!--  <div>-->
-<!--    <h2>用户登录</h2>-->
-<!--    <form @submit.prevent="handleLogin">-->
-<!--      <div>-->
-<!--        <label>邮箱</label>-->
-<!--        <input v-model="loginForm.username" type="text" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>密码</label>-->
-<!--        <input v-model="loginForm.password" type="password" required>-->
-<!--      </div>-->
-<!--      <div>-->
-<!--        <label>选择身份</label>-->
-<!--        <select v-model="loginForm.role" required>-->
-<!--          <option value="">请选择类型</option>-->
-<!--          <option value="student">房客</option>-->
-<!--          <option value="teacher">房东</option>-->
-<!--          <option value="admin">管理员</option>-->
-<!--        </select>-->
-<!--      </div>-->
-<!--      <button @click="register">注册</button>-->
-<!--    </form>-->
-<!--    <button @click="register">注册</button>-->
-<!--  </div>-->
-<!--</template>-->
 <template>
   <router-view></router-view>
   <div class="login-container">
     <div class="login-card">
       <h2 class="login-title">欢迎登录</h2>
+      <!-- 错误提示 -->
+      <div v-if="loginError" class="error-message">
+        <i class="icon icon-error"></i>
+        {{ loginError }}
+      </div>
+      <!-- 登录表单 -->
       <form class="login-form" @submit.prevent="handleLogin">
-        <!-- 错误提示 -->
-        <div v-if="loginError" class="error-message">
-          <i class="icon icon-error"></i>
-          {{ loginError }}
-        </div>
-
-        <!-- 表单内容 -->
+        <!-- 邮箱 -->
         <div class="form-group">
           <label class="input-label">邮箱</label>
           <div class="input-wrapper">
@@ -50,7 +24,7 @@
             >
           </div>
         </div>
-
+        <!-- 密码 -->
         <div class="form-group">
           <label class="input-label">密码</label>
           <div class="input-wrapper">
@@ -64,7 +38,7 @@
             >
           </div>
         </div>
-
+        <!-- 身份选择 -->
         <div class="form-group">
           <label class="input-label">身份选择</label>
           <div class="input-wrapper">
@@ -81,7 +55,7 @@
             </select>
           </div>
         </div>
-
+        <!-- 登录按钮 -->
         <button
             type="submit"
             class="login-btn"
@@ -90,7 +64,7 @@
           <span v-if="!loading">立即登录</span>
           <i v-else class="loading-icon"></i>
         </button>
-
+        <!-- 注册跳转 -->
         <div class="extra-actions">
           <span @click="register" class="register-link">没有账号？立即注册</span>
         </div>
@@ -98,79 +72,79 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import router from "@/pages/login/router.js";
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import request from '@/utils/request.js' // 你自己的请求工具
 
+const router = useRouter()
 
-import {reactive, ref} from "vue";
-import axios from 'axios'
-import request from "@/utils/request.js"
+// 登录表单数据
 const loginForm = reactive({
-  role: 'tenant',  // 新增的下拉框绑定值
   email: '',
-  password: ''
+  password: '',
+  role: 'tenant' // 默认角色
 })
+
 const loading = ref(false)
 const loginError = ref('')
+
+// 跳转到注册页面
 const register = () => {
-  router.push("/register");
+  router.push('/register') // 你注册页面的路径
 }
+
+// 登录逻辑
 const handleLogin = async () => {
   loginError.value = ''
   loading.value = true
   try {
-    // 明确设置请求头为 JSON 格式
-    const response = await request.post('/auth/login',
-        loginForm,  // 直接传递对象
+    const response = await request.post(
+        '/auth/login',
+        loginForm,
         {
           headers: {
-            'Content-Type': 'application/json' // 明确指定 JSON 格式
+            'Content-Type': 'application/json'
           }
         }
-    );
+    )
 
-    // 从响应中提取 token（根据后端响应结构）
+    // 假设后端返回结构中有 token
     const token = response.access_token || response.token
 
-    // 存储到 localStorage
     if (token) {
+      // 存储token
       localStorage.setItem('jwt_token', token)
+      // 跳转到 home.html（静态页面）
+      window.location.href = '/home.html'
+      // 如果你用vue-router，改为：
+      // router.push('/home')
     } else {
-      console.warn("未在响应中找到 token")
+      console.warn('未在响应中找到 token')
+      loginError.value = '登录失败：未获取到Token'
     }
-
-    // 登录成功后的操作（如跳转页面）
-    // router.push('/dashboard')
-
   } catch (error) {
-    // 更详细的错误处理
-    console.error("完整登录错误:", error)
-
+    console.error('登录错误:', error)
     if (error.response) {
-      // 服务器返回了响应
-      console.error("状态码:", error.response.status)
-      console.error("响应数据:", error.response.data)
-
-      // 根据后端错误结构获取消息
-      loginError.value = error.response.data?.message ||
+      loginError.value =
+          error.response.data?.message ||
           error.response.data?.error ||
           `服务器错误 (${error.response.status})`
     } else if (error.request) {
-      // 请求已发出但无响应
-      loginError.value = "服务器无响应，请检查网络"
+      loginError.value = '服务器无响应，请检查网络'
     } else {
-      // 其他错误
-      loginError.value = error.message || "请求配置错误"
+      loginError.value = error.message || '请求配置错误'
     }
   } finally {
     loading.value = false
   }
 }
-
 </script>
 
 <style scoped>
-/* 基础重置 */
+/* 样式保持你的设计风格 */
+
 * {
   margin: 0;
   padding: 0;
@@ -189,7 +163,7 @@ const handleLogin = async () => {
 
 /* 卡片样式 */
 .login-card {
-  background: white;
+  background: #fff;
   padding: 40px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -202,7 +176,7 @@ const handleLogin = async () => {
   transform: translateY(-5px);
 }
 
-/* 标题样式 */
+/* 标题 */
 .login-title {
   text-align: center;
   color: #2c3e50;
@@ -224,7 +198,7 @@ const handleLogin = async () => {
   border-radius: 2px;
 }
 
-/* 表单组样式 */
+/* 表单组 */
 .form-group {
   margin-bottom: 24px;
 }
@@ -236,12 +210,11 @@ const handleLogin = async () => {
   margin-bottom: 8px;
 }
 
-/* 输入框容器 */
 .input-wrapper {
   position: relative;
 }
 
-/* 图标样式 */
+/* 图标 */
 .icon {
   position: absolute;
   left: 16px;
@@ -251,11 +224,12 @@ const handleLogin = async () => {
   font-size: 18px;
 }
 
+/* 图标内容示例（你可以用字体图标库或自定义图标） */
 .icon-role::before { content: '\e905'; }
 .icon-user::before { content: '\e971'; }
 .icon-lock::before { content: '\e98d'; }
 
-/* 输入框样式 */
+/* 输入框 */
 .form-input,
 .form-select {
   width: 100%;
@@ -274,19 +248,19 @@ const handleLogin = async () => {
   outline: none;
 }
 
-/* 下拉框特殊样式 */
+/* 下拉箭头样式（自定义） */
 .form-select {
   appearance: none;
   background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")
   no-repeat right 16px center/16px;
 }
 
-/* 登录按钮样式 */
+/* 登录按钮 */
 .login-btn {
   width: 100%;
   padding: 16px;
   background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 16px;
